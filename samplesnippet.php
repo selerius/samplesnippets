@@ -1,156 +1,183 @@
 <?php
-
-
-include '../imi_configuration/D3sS0L4aToR.php';
-include '../imi_configuration/app_indicator.php';
-
-$minutes = "nope";
-
-if(isset($_GET['halo'])) { 
-    $token = $_GET['halo'];
-    $Sailt = $_GET['Synt'];
-
-    try {
-        $chicken = "SELECT * FROM `WS_Reason_Pop` WHERE `T4K_Promise` = '$token' AND `T4K_Email` = '$Sailt' LIMIT 1";
-        $prepaChickent = $conn->prepare($chicken);
-        $prepaChickent->execute();
-
-        if ($prepaChickent->rowCount() > 0) {
-            $result = $prepaChickent->fetch();
-            $thisToke = $result['T4K_Promise'];
-            $EmmaisWat = $result['T4K_Useed'];
-            $WhyU = $result['T4K_Purpo'];
-            $FacelessV = $result['T4K_Expires'];
-
-            $date = date('Y/m/d H:i:s');
-
-            $t1 = strtotime($date);
-            $t2 = strtotime($FacelessV);
-            // echo $t1;
-            // echo '<br>';
-            // echo $t2;
-            $delta_T = ($t2 - $t1);
-            $minutes = round(((($delta_T % 604800) % 86400) % 3600) / 60); 
-            // echo '<br>';
-            // echo $minutes;
-           
-            if ($minutes >= 0 && $minutes <= 5 ) {
-                $rstMess = "";
-            }
-            else {
-                $rstMess = "<div>Password Request Expired</div>";
-            }
-
-        } else {
-            $rstMess = "<div>Sorry, I cant find you here</div>";
-        }
-    }
-    catch (PDOException $e) {
-        echo "Error: " . $e->getMessage();
-    }
+if ( !function_exists( 'add_action' ) ) {
+    echo 'Code is poetry.';
+    exit;
 }
 
-if(isset($_POST['quint_tessa']) && $minutes > 0 && $minutes <= 5) {
-    
-    $m4sP4s = $_POST['goose_pass'];
-    $m5sP4s = $_POST['goose_confirm'];
+if( get_option("GRel_start") == 1 ) {
+	
+	//cURL Check
+	function GRel_is_curl_installed() {
+		if  (in_array  ('curl', get_loaded_extensions())) {
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
+	
+	//Add Metabox
+	add_action( 'add_meta_boxes', 'GRel_add_all_meta_box' );
+	function GRel_add_all_meta_box()
+	{
+		add_meta_box( 'GRel_related_keyword', __('Generate Related Keywords', 'GRel-plugin'), 'GRel_addmeta', 'post', 'normal', 'high' );
+		if (get_option('GRel_start_woo') == "1") {
+			add_meta_box( 'GRel_related_keyword', __('Generate Related Keywords', 'GRel-plugin'), 'GRel_addmeta', 'product', 'normal', 'high' );
+		}
+		if (get_option('GRel_start_bbp') == "1") {
+			add_meta_box( 'GRel_related_keyword', __('Generate Related Keywords', 'GRel-plugin'), 'GRel_addmeta', 'topic', 'normal', 'high' );
+		}
+	}
+	
+	//Add Metabox to Product or Post Page
+	function GRel_addmeta( $post ) {
+	
+		$values = get_post_custom ( $post->ID );
+		
+		//get Limit
 
-    try {
+		if (!empty($values['GRel_limit'][0])) 
+			$getLimit = $values['GRel_limit'][0];
+		else if (get_option("GRel_limit") !== "")
+			$getLimit = get_option("GRel_limit");
+		else
+			$getLimit = "10";
+		
+		//get Locale
+		if (!empty($values['GRel_locale'][0])) 
+			$getLocale = $values['GRel_locale'][0];
+		else if (get_option("GRel_locale") !== "")
+			$getLocale = get_option("GRel_locale");
+		else
+			$getLocale = get_locale();
+		
 
-        if ($m4sP4s != $m5sP4s) {
-            $rstMess = "<div>Password does not match</div>";
-        }
-        elseif (strlen($m5sP4s)<8) {
-            $rstMess = "<div>Password is short</div>";
-        }
-        else {
-            $encpo = hash('sha256', '4ll3g0r14' . $m5sP4s . '3qu1pg3nt5');
+		$keyword = isset( $values['GRel_KEYW'] ) ? $values['GRel_KEYW'][0] : '';
+		$limit = $getLimit;
+		$locale = $getLocale;
+		
+		wp_nonce_field( 'GRel_meta_box_nonce', 'meta_box_nonce' );
+		?>
+		<h4 style="font-size:14px"><?php echo __('Tag Keyword *', 'GRel-plugin'); ?></h4>
+		<p>
+			<input type="text" autocomplete="off" name="GRel_KEYW" id="GRel_KEYW" value="<?php echo $keyword; ?>">
+		</p>		
+		
+		<h4 style="font-size:14px"><?php echo __('Tag Limit (optional*)', 'GRel-plugin'); ?></h4>
+		<p>
+			<input type="number" autocomplete="off" name="GRel_limit" id="GRel_limit" value="<?php echo $limit; ?>">
+		</p>		
+		
+		<h4 style="font-size:14px"><?php echo __('Tag Locale Code (optional*)', 'GRel-plugin'); ?></h4>
+		<p>
+			<input type="text" autocomplete="off" name="GRel_locale" id="GRel_locale" value="<?php echo $locale; ?>">
+		</p>
+		
+		<div onclick="getData(document.getElementById('GRel_KEYW').value, document.getElementById('GRel_limit').value, document.getElementById('GRel_locale').value);" class="button button-primary button-large"><?php echo __('Get the Tags', 'GRel-plugin'); ?></div>
+		<div id="setSuccess"></div>
+		<div class="clear"></div>
 
-            $restapsw = "UPDATE `user_account` SET `u5er_pass` = '$encpo' WHERE `u5er_id` = '$EmmaisWat'";
-            $deltok = "DELETE FROM `WS_Reason_Pop` WHERE `T4K_Promise` = '$token'";
+			<?php
+		}
 
-            $preprestapsw = $conn->prepare($restapsw);
-            $prepdeltok = $conn->prepare($deltok);
-            
-            $preprestapsw->execute();
-            $prepdeltok->execute();
-            $rstMess = "<div>Password Changed Successfully!</div>";
+		add_action( 'save_post', 'GRel_meta_box_save' );
+		function GRel_meta_box_save( $post_id ) {
+			// Autosave
+			if( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) return;
 
-            echo '<meta http-equiv="refresh" content="3;url=https://imoodini.com/?summersault=new">';
-        }
+			// if our nonce isn't there, or we can't verify it, bail
+			if( !isset( $_POST['meta_box_nonce'] ) || !wp_verify_nonce( $_POST['meta_box_nonce'], 'GRel_meta_box_nonce' ) ) return;
 
-    }
-    catch (PDOException $e) {
-        echo "Error: " . $e->getMessage();
-    }
+			// User can "edit_post"
+			if( !current_user_can( 'edit_post' ) ) return;
+
+			// Update data
+			if( isset( $_POST['GRel_limit'] ) || isset( $_POST['GRel_locale'] ) || isset( $_POST['GRel_KEYW'] ) ) {
+				update_post_meta( $post_id, 'GRel_limit', $_POST['GRel_limit'] );
+				update_post_meta( $post_id, 'GRel_locale', $_POST['GRel_locale'] );
+				update_post_meta( $post_id, 'GRel_KEYW', $_POST['GRel_KEYW'] );
+			}
+
+		}
+
+
+	// AJAX
+
+	add_action( 'admin_footer', 'GRel_AJAX_javascript' );
+
+	function GRel_AJAX_javascript() { 
+		if (stripos($_SERVER['REQUEST_URI'], "?post_type=product") !== false ) {
+			$echoType = "new-tag-product_tag";
+		} else if (stripos($_SERVER['REQUEST_URI'], "?post_type=topic") !== false ) {
+			$echoType = "new-tag-topic-tag";
+		} else {
+			$echoType = "new-tag-post_tag";
+		}
+		
+	?><script type="text/javascript">
+		function getData(myTerm, myLimit, myLocale){
+
+			var data = {
+				'action': 'GRel_ajax',
+				'getAjaxWPTerm': myTerm,
+				'getAjaxWPMax': myLimit,
+				'getAjaxWPLocale': myLocale
+			};
+
+			jQuery.post(ajaxurl, data, function(response) { <?php 
+			if(use_block_editor_for_post($post)) {?>
+			document.getElementById("setSuccess").innerHTML = "<br><div style='margin-top:1rem'><textarea class='components-textarea-control__input' id='inspector-textarea-control-0' rows='4'>"+response+"</textarea></div><br><p class='showSuccess alert alert-success'>Success! Copy and paste into Tags.</p>";
+			<?php } else { ?>
+			document.getElementById("<?php echo $echoType; ?>").value = response;
+			document.getElementById("setSuccess").innerHTML = "<p class='showSuccess alert alert-success'>Success! Please check the Tags Widget.</p>";
+			<?php } ?>
+				
+				$(".showSuccess").delay(3600).fadeOut(600);
+			});
+		}
+		</script><?php
+	}
+
+
+	add_action( 'wp_ajax_GRel_ajax', 'GRel_ajax' );
+
+	function GRel_ajax() {
+		global $wpdb; // this is how you get access to the database
+
+		if(isset($_POST['getAjaxWPTerm'])) {
+			$term = urlencode($_POST['getAjaxWPTerm']);
+			$getLimit = $_POST['getAjaxWPMax'];
+			$getLocale = $_POST['getAjaxWPLocale'];
+			
+			$getLocale = str_replace("_", "-", $getLocale);
+
+			$get_useragent = $_SERVER['HTTP_USER_AGENT'];
+
+			$url = 'https://api.bing.com/osjson.aspx?query='.$term.'&setmkt='.$getLocale;
+			$ch  = curl_init();
+			curl_setopt($ch, CURLOPT_URL, $url);
+			curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+			curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+			curl_setopt($ch, CURLOPT_ENCODING, 'gzip, deflate');
+			curl_setopt($ch, CURLOPT_USERAGENT, $get_useragent);
+			curl_setopt($ch, CURLOPT_REFERER, "https://google.com");
+			$result = curl_exec($ch);
+			curl_close($ch);
+
+			$resultInArray = json_decode($result, true);
+
+			//
+			$resultCount = count($resultInArray[1]);
+
+			for ( $i = 1; $i < $resultCount; $i++ ) {
+				echo $resultInArray[1][$i].', ';
+				
+				if ( $i == $getLimit) 
+					break;
+			}
+		}
+		
+		wp_die();
+
+	}
 }
-
-if (isset($_GET['halo']) == "") {
-    $rstMess = "<div>Invalid Request</div>";
-}
-
-
-?>
-<!doctype html>
-<html lang="en">
-<head>
-    <!-- Required meta tags -->
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="robots" content="no index, nofollow" />
-
-    <title>Password Reset · imoodini</title>
-    
-    <?php include "../imi_includes/imoodini-inc-css.php" ?>
-
-	</head>
-		<body>
-        <?php if ($indicator == "") {
-            
-            echo '<div class="h-separator"></div>';
-
-        } ?>
-
-
-			<!-- Container -->
-			<div class="container">
-                <div class="row">
-                    <div class="col-md-4 offset-md-4">
-                    <div class="quackers text-center p-4">
-                        <img class="img-fluid" src="https://imoodini.com/imi-media/imoodini-logo-prime-m.png" style="height: 30px;" alt="">
-                        
-                        <form class="mt-3 needs-validation" method="post" novalidate>
-                        <h6 class="text-muted">Forgot Passsword</h6>
-                            <div class="form-group">
-                                
-                                <input type="password" class="disablecopypaste text-center form-control rounded-0 mt-1"  placeholder="Your Password" maxlength="30" name="goose_pass" pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}" required autocomplete="new-password">
-                                <div class="invalid-feedback">
-                                    Must contain at least one  number and one uppercase and lowercase letter, and at least 8 or more characters
-                                </div>
-                                <input type="password" class="disablecopypaste text-center form-control rounded-0 mt-1" placeholder="Repeat Password" maxlength="30" name="goose_confirm" pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}" required autocomplete="new-password">
-                                <div class="invalid-feedback">
-                                    Oh you missed something!
-                                </div>
-                                <?php if(isset($rstMess)){ echo $rstMess;} ?>
-                                <input type="hidden" name="quint_tessa" value="cross-eyes">
-                                <input type="submit" class="btn btn-block btn-primary mt-2" value="Reset" name="rw_rosetta">
-                            </div>
-                        </form>
-                        <hr>
-                        <?php if ($indicator == "") {
-            
-                            echo '<div class="text-center mb-1"><a class="text-black-50" href="../index.php" ><i class="fi-xwllxl-arrow-simple-wide"></i> Go Back</a></div>';
-
-                        } ?>
-                    </div>
-                    </div>
-                </div>
-            </div>
-            <!-- / Container -->
-
-            
-
-            <?php include "../imi_includes/imoodini-inc-js.php" ?>
-            
-		</body>
-	</html>
